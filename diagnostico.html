@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest"><title>Diagnóstico - Tangerina</title>
+<style>body{font:15px system-ui;margin:16px;background:#fffaf5;color:#222}li{margin:6px 0;list-style:none}.ok{color:#15803d}.no{color:#b91c1c}code{background:#ffedd5;padding:1px 4px;border-radius:4px}</style></head>
+<body><h2>🍊 Diagnóstico de instalação</h2><ul id="o"></ul><button id="b" hidden style="padding:10px 16px;font-size:16px">Instalar agora</button>
+<script>
+const o=document.getElementById('o'),add=(ok,t)=>{o.insertAdjacentHTML('beforeend',`<li class="${ok?'ok':'no'}">${ok?'✅':'❌'} ${t}</li>`)};
+let ev=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();ev=e;b.hidden=false;add(true,'O navegador liberou a instalação (beforeinstallprompt).')});
+b.onclick=()=>ev&&ev.prompt();
+(async()=>{
+ add(location.protocol==='https:','Endereço em HTTPS: <code>'+location.origin+location.pathname+'</code>');
+ add(!/FBAN|FBAV|Instagram|WhatsApp|Line|Telegram/i.test(navigator.userAgent),'Aberto em navegador de verdade (não dentro de WhatsApp/Instagram etc.)');
+ add(!matchMedia('(display-mode: standalone)').matches,'Ainda não está rodando como app instalado (se ❌, já está instalado).');
+ try{const r=await fetch('manifest.webmanifest');const m=await r.json();add(r.ok,'manifest.webmanifest encontrado ('+m.name+')');
+  for(const i of m.icons){const x=await fetch(i.src);add(x.ok,'Ícone '+i.src+' ('+x.status+')')}}
+ catch(e){add(false,'manifest.webmanifest NÃO foi encontrado — confira se o arquivo está na mesma pasta do index.html')}
+ try{const x=await fetch('sw.js');add(x.ok,'sw.js encontrado ('+x.status+')')}catch(e){add(false,'sw.js não encontrado')}
+ try{const g=await navigator.serviceWorker.getRegistration('./');add(!!g,'Service worker registrado (abra o app principal uma vez antes)');add(!!navigator.serviceWorker.controller,'Service worker controlando esta página (recarregue se ❌)')}
+ catch(e){add(false,'Service worker indisponível neste navegador')}
+ add(true,'Navegador: '+navigator.userAgent);
+})();
+</script></body></html>
