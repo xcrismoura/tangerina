@@ -25,6 +25,25 @@
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#ffedd5;border-radius:10px}::-webkit-scrollbar-thumb{background:#fb923c;border-radius:10px}
 .hidden{display:none!important}
 </style>
+<style>
+.ov{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;padding:24px;text-align:center;font-family:Outfit,system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+.ov.hidden{display:none!important}
+#focusScreen{background:#000}
+#focusWord{color:#6f6f6f;font-size:clamp(3rem,16vw,7rem);font-weight:300;letter-spacing:.12em;text-transform:lowercase}
+#focusBtn{background:transparent;color:#777;border:1px solid #333;border-radius:999px;padding:.8rem 2.2rem;font:500 1.05rem Outfit,system-ui,sans-serif;cursor:pointer}
+#focusBtn:active{background:#111}
+#promptScreen{background:#fff7ed;color:#7c2d12}
+#promptScreen.flashing{animation:tflash 1.3s ease-in-out infinite}
+@keyframes tflash{0%,100%{background:#f97316}50%{background:#fff7ed}}
+@media (prefers-reduced-motion:reduce){#promptScreen.flashing{animation:none;background:#fb923c}}
+#promptScreen .q1{font-size:clamp(1.6rem,7vw,2.6rem);font-weight:800}
+#promptScreen .q2{font-size:clamp(1.1rem,4.5vw,1.6rem);font-weight:600;margin-top:-1.6rem;opacity:.85}
+.pbtns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.pbtn{border:0;border-radius:18px;padding:1rem 2rem;font:700 1.15rem Outfit,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(124,45,18,.25)}
+.pbtn.flow{background:#7c2d12;color:#fff}
+.pbtn.rest{background:#fff;color:#c2410c}
+.pbtn.sil{background:#16a34a;color:#fff;font-size:1rem;padding:.8rem 1.6rem}
+</style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
 
@@ -152,6 +171,19 @@
  </div>
 </section>
 </main>
+<div id="focusScreen" class="ov hidden">
+ <div id="focusWord">foco</div>
+ <button id="focusBtn" onclick="focusScreenAction()">Voltar</button>
+</div>
+<div id="promptScreen" class="ov hidden">
+ <div class="q1">🍊 Tempo de foco concluído!</div>
+ <div class="q2">Flow ou descanso?</div>
+ <div class="pbtns">
+  <button class="pbtn flow" onclick="handlePromptDecision('continue')">⚡ Flow</button>
+  <button class="pbtn rest" onclick="handlePromptDecision('stop')">☕ Descanso</button>
+ </div>
+ <button id="promptSilence" class="pbtn sil" onclick="dismissAlarm()">🔔 Silenciar alarme</button>
+</div>
 
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break'};
@@ -315,7 +347,7 @@ function finishBreak(){
  $('phaseSubtitle').textContent='Pronto para a próxima tangerina?';
 }
 function showAlarm(){if(!muted&&volume>0&&scheduled.length)$('alarmBox').classList.remove('hidden')}
-function dismissAlarm(){cancelSounds();$('alarmBox').classList.add('hidden')}
+function dismissAlarm(){cancelSounds();$('alarmBox').classList.add('hidden');$('promptScreen').classList.remove('flashing');$('promptSilence').classList.add('hidden')}
 function skipBreak(){cancelSounds();resetTimer()}
 function timeBackToSetup(){
  setPhaseUI(PHASES.SETUP);updateDisplay(initialFocusSeconds);setProgress(1);
@@ -355,10 +387,42 @@ function setPhaseUI(p){
  $('flowStopBtn').classList.toggle('hidden',p!==PHASES.FLOW);
  $('skipBtn').classList.toggle('hidden',p!==PHASES.BREAK);
  $('resetBtn').classList.toggle('hidden',p!==PHASES.FOCUS&&p!==PHASES.BREAK);
- $('continuationPrompt').classList.toggle('hidden',p!==PHASES.PROMPT);
+ $('continuationPrompt').classList.add('hidden');   // agora a pergunta é em tela cheia
+ updateScreens(p);
  $('settingsPanel').classList.toggle('opacity-50',p!==PHASES.SETUP);
  $('settingsPanel').classList.toggle('pointer-events-none',p!==PHASES.SETUP);
 }
+
+// ---------- TELAS CHEIAS (preto OLED) ----------
+function updateScreens(p){
+ const inFocus=p===PHASES.FOCUS, inFlow=p===PHASES.FLOW, inPrompt=p===PHASES.PROMPT;
+ $('focusScreen').classList.toggle('hidden',!(inFocus||inFlow));
+ $('promptScreen').classList.toggle('hidden',!inPrompt);
+ $('focusWord').textContent=inFlow?'flow':'foco';
+ $('focusBtn').textContent=inFlow?'Descansar':'Voltar';
+ if(inPrompt){$('promptScreen').classList.add('flashing');$('promptSilence').classList.remove('hidden')}
+ const full=inFocus||inFlow||inPrompt;
+ setThemeColor(full?(inPrompt?'#f97316':'#000000'):'#f97316');
+ if(full){enterFullscreen();requestWake()}else{exitFullscreen();releaseWake()}
+}
+function focusScreenAction(){currentPhase===PHASES.FLOW?stopFlowAndRest():resetTimer()}
+function setThemeColor(c){const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}
+function enterFullscreen(){
+ try{const el=document.documentElement;
+  if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+  else if(!document.webkitFullscreenElement&&el.webkitRequestFullscreen)el.webkitRequestFullscreen();}catch(e){}
+}
+function exitFullscreen(){
+ try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+  else if(document.webkitFullscreenElement&&document.webkitExitFullscreen)document.webkitExitFullscreen();}catch(e){}
+}
+// Mantém a tela do celular acesa durante foco/flow (senão ela apagaria sozinha)
+let wakeLock=null;
+async function requestWake(){try{if('wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){}}
+function releaseWake(){try{wakeLock&&wakeLock.release();wakeLock=null}catch(e){}}
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden&&[PHASES.FOCUS,PHASES.FLOW,PHASES.PROMPT].includes(currentPhase))requestWake();
+});
 
 // ---------- CESTA & HISTÓRICO ----------
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
