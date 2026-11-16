@@ -1,10 +1,10 @@
 // Service worker da Tangerina: permite instalar o app e abrir offline.
 // Ao publicar uma nova versão do site, aumente o número de CACHE.
-const CACHE='tangerina-v1';
+const CACHE='tangerina-v2';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon.png'];
 
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c=>Promise.allSettled(SHELL.map(u=>c.add(u)))).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate',e=>{
   e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
