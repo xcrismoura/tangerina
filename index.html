@@ -118,6 +118,39 @@ header h1{background-image:linear-gradient(90deg,#fb923c,#f97316)!important}
 .mcard h3{color:#f1f1f3}.mcard p{color:#8b8b92}
 .mbtn.main{background:#f97316;color:#000}.mbtn.alt{background:#1c1c1f;color:#fdba74}
 </style>
+<style id="oled2">
+/* ===== v1.4: preto puro em tudo; contornos arredondados em branco ===== */
+.bg-white,.bg-white\/70,.bg-white\/80,.bg-slate-50,.bg-slate-100,.bg-slate-800,.bg-slate-200,
+.bg-tangerine-50,.bg-tangerine-50\/60,.bg-amber-50\/50,.bg-tangerine-100,
+.hover\:bg-slate-200:hover,.hover\:bg-slate-300:hover,.hover\:bg-slate-900:hover,
+.hover\:bg-tangerine-100:hover,.hover\:bg-tangerine-200:hover{background-color:#000!important}
+/* linhas das caixas arredondadas */
+.border-tangerine-100,.border-tangerine-200,.border-slate-100,.border-slate-200,#basketVisual{border-color:#fff!important}
+/* divisórias e linha do cabeçalho: mais discretas */
+.border-t,header.border-b,header{border-color:rgba(255,255,255,.22)!important}
+/* botões que eram cinza ganham contorno branco */
+.bg-slate-100,.bg-slate-800{border:1px solid #fff}
+.bg-tangerine-50\/60{border:1px solid #fff}
+.bg-tangerine-100{border:1px solid #f97316}
+#statusBadge{background:#000!important;border:1px solid currentColor}
+.ver{background:#000;border:1px solid #f97316}
+.hchip.f{background:#000;border:1px solid #f97316}
+.hchip.b{background:#000;border:1px solid #4ade80}
+.stroke-tangerine-100{stroke:#000!important}
+::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:#f97316}
+/* telas e botões dos avisos */
+#focusBtn{border:1px solid #fff;color:#bbb}
+.pbtn.rest{background:#000;color:#fdba74;border:1px solid #fff}
+.mcard{background:#000;border:1px solid #fff}
+.mbtn.alt{background:#000;color:#fdba74;border:1px solid #fff}
+/* botão liga/desliga: desligado = preto com contorno branco; ligado = laranja */
+input.peer + div{background-color:#000!important;box-shadow:0 0 0 1px #fff}
+input.peer + div::after{background-color:#6b6b72!important;border-color:#6b6b72!important}
+input.peer:checked + div{background-color:#f97316!important;box-shadow:0 0 0 1px #f97316}
+input.peer:checked + div::after{background-color:#000!important;border-color:#000!important}
+.tstate{margin-left:10px;min-width:5.4em;font-size:.78rem;font-weight:800;color:#8b8b92;text-align:left}
+.tstate.on{color:#f97316}
+</style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
 
@@ -126,7 +159,7 @@ header h1{background-image:linear-gradient(90deg,#fb923c,#f97316)!important}
   <div class="flex items-center gap-3">
    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-tangerine-500 to-tangerine-400 flex items-center justify-center shadow-md shadow-tangerine-500/20 text-xl">🍊</div>
    <div>
-    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1><span class="ver" id="appVersion">v1.3</span></div>
+    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1><span class="ver" id="appVersion">v1.4</span></div>
     <p class="text-xs text-slate-500 font-medium">Foco, Flow & Descanso</p>
    </div>
   </div>
@@ -199,6 +232,7 @@ header h1{background-image:linear-gradient(90deg,#fb923c,#f97316)!important}
    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
     <input type="checkbox" id="toggleProportionalBreak" checked class="sr-only peer">
     <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tangerine-500"></div>
+   <span id="toggleState" class="tstate">Ligado</span>
    </label>
   </div>
 
@@ -278,7 +312,7 @@ header h1{background-image:linear-gradient(90deg,#fb923c,#f97316)!important}
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='1.3';
+const APP_VERSION='1.4';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -353,7 +387,12 @@ function ensureSoundAtEnd(kind){
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){initAudio();tick()}});
 
 // ---------- CONFIGURAÇÕES ----------
+function updateToggleState(){
+ const on=$('toggleProportionalBreak').checked,t=$('toggleState');
+ t.textContent=on?'Ligado':'Desligado';t.classList.toggle('on',on);
+}
 function onSettingsChange(){
+ updateToggleState();
  const f=Math.max(1,parseInt($('inputFocusTime').value)||1), b=Math.max(1,parseInt($('inputBreakTime').value)||1);
  initialFocusSeconds=f*60;defaultBreakSeconds=b*60;
  if(currentPhase===PHASES.SETUP)updateDisplay(initialFocusSeconds);
