@@ -43,6 +43,26 @@
 .pbtn.flow{background:#7c2d12;color:#fff}
 .pbtn.rest{background:#fff;color:#c2410c}
 .pbtn.sil{background:#16a34a;color:#fff;font-size:1rem;padding:.8rem 1.6rem}
+.verrow{display:flex;align-items:baseline;gap:8px}
+.ver{font-size:.7rem;font-weight:600;color:#c2410c;background:#ffedd5;border-radius:999px;padding:1px 8px}
+.pbtns{display:flex;flex-direction:column;align-items:stretch;gap:14px;width:min(340px,86vw)}
+.pbtn{width:100%}
+#focusTimer{color:#8a8a8a;font-size:clamp(3rem,18vw,6.5rem);font-weight:300;font-variant-numeric:tabular-nums;margin-top:-1.5rem}
+#endScreen{background:#fff7ed;color:#7c2d12}
+#endScreen.flashing{animation:tflash 1.3s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){#endScreen.flashing{animation:none;background:#fb923c}}
+#endScreen .q1{font-size:clamp(1.6rem,7vw,2.6rem);font-weight:800}
+#modeDialog{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Outfit,system-ui,sans-serif}
+#modeDialog.hidden{display:none!important}
+.mcard{background:#fff;border-radius:24px;padding:24px;width:min(380px,100%);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.mcard h3{margin:0 0 6px;font-size:1.25rem;font-weight:800;color:#7c2d12}
+.mcard p{margin:0 0 16px;font-size:.85rem;color:#64748b}
+.mbtn{display:block;width:100%;border:0;border-radius:16px;padding:.9rem 1rem;font:700 1rem Outfit,system-ui,sans-serif;cursor:pointer;margin-top:10px}
+.mbtn.main{background:#0a0a0a;color:#fff}.mbtn.alt{background:#ffedd5;color:#c2410c}.mbtn.cancel{background:transparent;color:#94a3b8;font-weight:500}
+.hchips{display:flex;gap:8px;flex-shrink:0}
+.hchip{display:inline-flex;align-items:center;gap:5px;border-radius:12px;padding:5px 10px;font-weight:800;font-size:.95rem;white-space:nowrap}
+.hchip.f{background:#ffedd5;color:#c2410c}.hchip.b{background:rgba(74,222,128,.15);color:#15803d}
+.hchip small{font-weight:600;font-size:.7rem}
 </style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
@@ -52,7 +72,7 @@
   <div class="flex items-center gap-3">
    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-tangerine-500 to-tangerine-400 flex items-center justify-center shadow-md shadow-tangerine-500/20 text-xl">🍊</div>
    <div>
-    <h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1>
+    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1><span class="ver" id="appVersion">v1.2</span></div>
     <p class="text-xs text-slate-500 font-medium">Foco, Flow & Descanso</p>
    </div>
   </div>
@@ -173,6 +193,7 @@
 </main>
 <div id="focusScreen" class="ov hidden">
  <div id="focusWord">foco</div>
+ <div id="focusTimer" class="hidden">00:00</div>
  <button id="focusBtn" onclick="focusScreenAction()">Voltar</button>
 </div>
 <div id="promptScreen" class="ov hidden">
@@ -181,12 +202,29 @@
  <div class="pbtns">
   <button class="pbtn flow" onclick="handlePromptDecision('continue')">⚡ Flow</button>
   <button class="pbtn rest" onclick="handlePromptDecision('stop')">☕ Descanso</button>
+  <button id="promptSilence" class="pbtn sil" onclick="dismissAlarm()">🔔 Silenciar alarme</button>
  </div>
- <button id="promptSilence" class="pbtn sil" onclick="dismissAlarm()">🔔 Silenciar alarme</button>
 </div>
-
+<div id="endScreen" class="ov hidden">
+ <div class="q1">☕ Descanso terminado!</div>
+ <div class="pbtns">
+  <button class="pbtn flow" onclick="nextFocus()">🍊 Bora colher mais uma?</button>
+  <button class="pbtn rest" onclick="resetTimer()">🏠 Voltar ao início</button>
+  <button id="endSilence" class="pbtn sil" onclick="dismissAlarm()">🔔 Silenciar alarme</button>
+ </div>
+</div>
+<div id="modeDialog" class="hidden">
+ <div class="mcard">
+  <h3>Como você quer focar?</h3>
+  <p>Sua escolha vale para foco, flow e descanso desta rodada.</p>
+  <button class="mbtn main" onclick="chooseMode(true)">🖤 Tela anti-distração</button>
+  <button class="mbtn alt" onclick="chooseMode(false)">⏱ Só o timer</button>
+  <button class="mbtn cancel" onclick="$('modeDialog').classList.add('hidden')">Cancelar</button>
+ </div>
+</div>
 <script>
-const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break'};
+const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
+const APP_VERSION='1.2';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -196,6 +234,7 @@ let phaseEndAt=0, flowStartAt=0, extraFlowSeconds=0;
 let calculatedBreakSeconds=0, totalFocusSecondsInSession=0;
 let sessionList=[], totalStudySecondsToday=0;
 let muted=false, volume=0.7;
+let antiDistraction=false;   // escolhido ao iniciar o foco; vale para toda a rodada
 
 // ---------- Persistência ----------
 const today=()=>new Date().toISOString().slice(0,10);
@@ -273,6 +312,16 @@ function onSettingsChange(){
 // ---------- LÓGICA ----------
 function startTimer(){
  if(currentPhase!==PHASES.SETUP)return;
+ initAudio();                                   // desbloqueia o áudio no clique
+ $('modeDialog').classList.remove('hidden');
+}
+function chooseMode(ad){
+ $('modeDialog').classList.add('hidden');
+ antiDistraction=ad;
+ beginFocus();
+}
+function nextFocus(){ currentPhase=PHASES.SETUP; beginFocus(); }   // "Bora colher mais uma?"
+function beginFocus(){
  initAudio();
  dismissAlarm();
  try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}
@@ -340,6 +389,7 @@ function finishBreak(){
  clearInterval(timerInterval);
  ensureSoundAtEnd('break');
  notify('☕ Descanso terminado!','Hora de voltar ao foco 🍊');
+ if(antiDistraction){currentPhase=PHASES.BREAKEND;setPhaseUI(PHASES.BREAKEND);showAlarm();return}
  currentPhase=PHASES.SETUP;
  timeBackToSetup();
  showAlarm();
@@ -347,14 +397,18 @@ function finishBreak(){
  $('phaseSubtitle').textContent='Pronto para a próxima tangerina?';
 }
 function showAlarm(){if(!muted&&volume>0&&scheduled.length)$('alarmBox').classList.remove('hidden')}
-function dismissAlarm(){cancelSounds();$('alarmBox').classList.add('hidden');$('promptScreen').classList.remove('flashing');$('promptSilence').classList.add('hidden')}
-function skipBreak(){cancelSounds();resetTimer()}
+function dismissAlarm(){cancelSounds();$('alarmBox').classList.add('hidden');['promptScreen','endScreen'].forEach(i=>$(i).classList.remove('flashing'));['promptSilence','endSilence'].forEach(i=>$(i).classList.add('hidden'))}
+function skipBreak(){
+ cancelSounds();
+ if(antiDistraction&&currentPhase===PHASES.BREAK){
+  clearInterval(timerInterval);currentPhase=PHASES.BREAKEND;setPhaseUI(PHASES.BREAKEND);dismissAlarm();
+ }else resetTimer();
+}
 function timeBackToSetup(){
  setPhaseUI(PHASES.SETUP);updateDisplay(initialFocusSeconds);setProgress(1);
 }
 function resetTimer(){
- clearInterval(timerInterval);cancelSounds();
- $('alarmBox').classList.add('hidden');
+ clearInterval(timerInterval);dismissAlarm();
  currentPhase=PHASES.SETUP;extraFlowSeconds=0;
  timeBackToSetup();
 }
@@ -363,7 +417,7 @@ function resetTimer(){
 function updateDisplay(sec,stopwatch=false){
  const m=Math.floor(sec/60),s=sec%60;
  const f=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
- $('timeDisplay').textContent=f;
+ $('timeDisplay').textContent=f;$('focusTimer').textContent=f;
  document.title=`${stopwatch?'⚡ Flow ':'🍊 '}${f} - Tangerina`;
 }
 function setProgress(r){$('progressCircle').style.strokeDashoffset=100-Math.max(0,Math.min(1,r))*100}
@@ -374,6 +428,7 @@ const UI={
  focus:{b:'bg-tangerine-100 text-tangerine-800',d:'bg-tangerine-500 animate-ping',t:'Foco Total (Base)',s:'Mantenha a atenção na sua tarefa',c:'stroke-tangerine-500'},
  prompt:{b:'bg-emerald-100 text-emerald-800',d:'bg-emerald-500',t:'Meta Concluída!',s:'Escolha se deseja continuar no flow',c:'stroke-emerald-500'},
  flow:{b:'bg-purple-100 text-purple-800',d:'bg-purple-500 animate-pulse',t:'Estado de Flow (Cronômetro)',s:'Tempo extra sendo contabilizado',c:'stroke-purple-500'},
+ breakend:{b:'bg-leaf-400/20 text-leaf-700',d:'bg-leaf-500',t:'Descanso terminado!',s:'Pronto para a próxima tangerina?',c:'stroke-leaf-500'},
  break:{b:'bg-leaf-400/20 text-leaf-700',d:'bg-leaf-500 animate-ping',t:'Descanso Merecido',s:'Relaxe, hidrate-se e descanse a mente',c:'stroke-leaf-500'}
 };
 function setPhaseUI(p){
@@ -387,7 +442,6 @@ function setPhaseUI(p){
  $('flowStopBtn').classList.toggle('hidden',p!==PHASES.FLOW);
  $('skipBtn').classList.toggle('hidden',p!==PHASES.BREAK);
  $('resetBtn').classList.toggle('hidden',p!==PHASES.FOCUS&&p!==PHASES.BREAK);
- $('continuationPrompt').classList.add('hidden');   // agora a pergunta é em tela cheia
  updateScreens(p);
  $('settingsPanel').classList.toggle('opacity-50',p!==PHASES.SETUP);
  $('settingsPanel').classList.toggle('pointer-events-none',p!==PHASES.SETUP);
@@ -395,19 +449,30 @@ function setPhaseUI(p){
 
 // ---------- TELAS CHEIAS (preto OLED) ----------
 function updateScreens(p){
- const inFocus=p===PHASES.FOCUS, inFlow=p===PHASES.FLOW, inPrompt=p===PHASES.PROMPT;
- $('focusScreen').classList.toggle('hidden',!(inFocus||inFlow));
- $('promptScreen').classList.toggle('hidden',!inPrompt);
- $('focusWord').textContent=inFlow?'flow':'foco';
- $('focusBtn').textContent=inFlow?'Descansar':'Voltar';
- if(inPrompt){$('promptScreen').classList.add('flashing');$('promptSilence').classList.remove('hidden')}
- const full=inFocus||inFlow||inPrompt;
- setThemeColor(full?(inPrompt?'#f97316':'#000000'):'#f97316');
+ const ad=antiDistraction;
+ const inFocus=p===PHASES.FOCUS, inFlow=p===PHASES.FLOW, inBreak=p===PHASES.BREAK;
+ const inPrompt=p===PHASES.PROMPT, inEnd=p===PHASES.BREAKEND;
+ $('focusScreen').classList.toggle('hidden',!(ad&&(inFocus||inFlow||inBreak)));
+ $('promptScreen').classList.toggle('hidden',!(ad&&inPrompt));
+ $('endScreen').classList.toggle('hidden',!(ad&&inEnd));
+ $('focusWord').textContent=inFlow?'flow':inBreak?'descanso':'foco';
+ $('focusTimer').classList.toggle('hidden',!inBreak);
+ $('focusBtn').textContent=inFlow?'Descansar':inBreak?'Pular descanso':'Voltar';
+ if(ad&&inPrompt){$('promptScreen').classList.add('flashing');$('promptSilence').classList.remove('hidden')}
+ if(ad&&inEnd){$('endScreen').classList.add('flashing');$('endSilence').classList.remove('hidden')}
+ // sem modo anti-distração: a pergunta aparece no próprio app
+ $('continuationPrompt').classList.toggle('hidden',ad||!inPrompt);
+ const full=ad&&(inFocus||inFlow||inBreak||inPrompt||inEnd);
+ setThemeColor(!full?'#f97316':(inPrompt||inEnd)?'#f97316':'#000000');
  if(full){enterFullscreen();requestWake()}else{exitFullscreen();releaseWake()}
 }
 function focusScreenAction(){currentPhase===PHASES.FLOW?stopFlowAndRest():resetTimer()}
 function setThemeColor(c){const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}
+function isInstalledApp(){
+ try{return ['fullscreen','standalone'].some(m=>matchMedia('(display-mode: '+m+')').matches)||navigator.standalone===true}catch(e){return false}
+}
 function enterFullscreen(){
+ if(isInstalledApp())return;     // no app instalado já é tela cheia: evita o aviso "para sair da tela cheia..."
  try{const el=document.documentElement;
   if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
   else if(!document.webkitFullscreenElement&&el.webkitRequestFullscreen)el.webkitRequestFullscreen();}catch(e){}
@@ -449,11 +514,11 @@ function renderHistory(){
  const box=$('sessionsHistory');box.querySelectorAll('.hist-item').forEach(e=>e.remove());
  [...sessionList].reverse().forEach(s=>{
   const c=document.createElement('div');
-  c.className='hist-item p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-xs text-slate-700';
-  c.innerHTML=`<div class="flex items-center gap-2.5"><span class="w-7 h-7 rounded-xl bg-tangerine-100 flex items-center justify-center">🍊</span>
-   <div><span class="font-bold text-slate-800 block">${s.focusMins} min de Estudo</span>
-   <span class="text-[10px] text-slate-400">${esc(s.timeStr)}${s.wasFlow?' • com Flow ⚡':''}</span></div></div>
-   <span class="px-2 py-0.5 bg-leaf-400/10 text-leaf-700 font-semibold rounded-lg text-[11px]">☕ ${s.breakMins} min</span>`;
+  c.className='hist-item p-3 bg-slate-50 border border-slate-100 rounded-2xl';
+  c.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px';
+  c.innerHTML=`<div style="min-width:0"><span class="font-bold text-slate-800 block" style="font-size:.8rem">${esc(s.timeStr)}</span>
+   <span class="text-[10px] text-slate-400">${s.wasFlow?'com Flow ⚡':'foco'}</span></div>
+   <div class="hchips"><span class="hchip f">🍊 ${s.focusMins}<small>min</small></span><span class="hchip b">☕ ${s.breakMins}<small>min</small></span></div>`;
   box.appendChild(c);
  });
 }
