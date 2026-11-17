@@ -164,6 +164,18 @@ input.peer:checked + div{box-shadow:0 0 0 1px #f97316}
 #focusBtn{color:var(--dim)!important;border:1px solid var(--dim)!important;background:transparent}
 input[type=range]:disabled{opacity:.35}
 </style>
+<style id="v17">
+/* ===== v1.7 ===== */
+.pbtn{border:1px solid transparent}
+.pbtn.sil{font-size:1.15rem;padding:1rem 2rem}          /* "Silenciar alarme" do mesmo tamanho dos outros */
+#timerScreen{background:#000;gap:1.6rem}
+#timerScreen .tcol{display:flex;flex-direction:column;align-items:center}
+#timerScreen svg{width:min(78vw,340px);height:min(78vw,340px)}
+#timeDisplay{font-size:clamp(2.6rem,13vw,4rem)}
+#phaseSubtitle{font-size:.72rem;line-height:1.25;padding:0 2.4rem;text-align:center}
+.tbtns{display:flex;flex-direction:column;align-items:stretch;gap:12px;width:min(340px,86vw)}
+.tbtns button{width:100%;max-width:none}
+</style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
 
@@ -177,7 +189,7 @@ input[type=range]:disabled{opacity:.35}
    </div>
   </div>
   <div class="flex items-center gap-2">
-<span class="ver" id="appVersion">v1.6</span>
+<span class="ver" id="appVersion">v1.7</span>
    <div class="bg-tangerine-50 border border-tangerine-200 px-3 py-1.5 rounded-full text-xs font-semibold text-tangerine-800">⏱ Hoje: <span id="headerTotalTime">0m</span></div>
   </div>
  </div>
@@ -188,21 +200,6 @@ input[type=range]:disabled{opacity:.35}
 <!-- Coluna Esquerda: Timer e Configurações -->
 <section class="lg:col-span-7 flex flex-col items-center">
  <div class="w-full bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-tangerine-500/5 border border-tangerine-100 text-center">
-
-  <div id="statusBadge" class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase mb-4">
-   <span id="statusDot" class="w-2 h-2 rounded-full mr-2"></span><span id="statusText"></span>
-  </div>
-
-  <div class="relative my-2 flex justify-center items-center">
-   <svg viewBox="0 0 100 100" class="w-64 h-64 md:w-72 md:h-72 -rotate-90">
-    <circle cx="50" cy="50" r="44" class="stroke-tangerine-100" stroke-width="5" fill="none"/>
-    <circle id="progressCircle" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0" stroke-width="5" stroke-linecap="round" fill="none" class="stroke-tangerine-500"/>
-   </svg>
-   <div class="absolute inset-0 flex flex-col items-center justify-center">
-    <span id="timeDisplay" class="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-800 tabular-nums">30:00</span>
-    <span id="phaseSubtitle" class="text-sm font-medium text-slate-400 mt-2 px-8"></span>
-   </div>
-  </div>
 
   <div id="continuationPrompt" class="hidden my-5 p-4 bg-tangerine-50 border border-tangerine-200 rounded-2xl">
    <p class="text-sm md:text-base font-semibold text-tangerine-900 mb-3">🎉 O tempo base terminou! O que você prefere?</p>
@@ -216,11 +213,8 @@ input[type=range]:disabled{opacity:.35}
    <button onclick="dismissAlarm()" class="ring px-6 py-3 bg-leaf-500 hover:bg-leaf-600 text-white font-bold rounded-2xl shadow-lg shadow-leaf-500/30">🔔 Silenciar alarme</button>
   </div>
 
-  <div class="flex flex-wrap justify-center items-center gap-3 mt-5">
+  <div class="flex flex-wrap justify-center items-center gap-3">
    <button id="startBtn" onclick="startTimer()" class="w-full max-w-xs py-4 px-8 bg-gradient-to-r from-tangerine-500 to-tangerine-600 hover:from-tangerine-600 hover:to-tangerine-700 text-white font-bold rounded-2xl shadow-lg shadow-tangerine-500/30 hover:-translate-y-0.5 transition text-lg">▶ Iniciar Foco</button>
-   <button id="flowStopBtn" onclick="stopFlowAndRest()" class="hidden w-full max-w-xs py-4 px-8 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition text-lg">■ Parar Flow & Descansar</button>
-   <button id="skipBtn" onclick="skipBreak()" class="hidden px-5 py-4 bg-leaf-500 hover:bg-leaf-600 text-white font-semibold rounded-2xl transition">⏭ Pular descanso</button>
-   <button id="resetBtn" onclick="resetTimer()" class="hidden px-5 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition" title="Reiniciar">↺ Reiniciar</button>
   </div>
  </div>
 
@@ -312,6 +306,30 @@ input[type=range]:disabled{opacity:.35}
  </div>
 </section>
 </main>
+<div id="timerScreen" class="ov hidden">
+ <div class="tcol">
+  <div id="statusBadge" class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase mb-4">
+   <span id="statusDot" class="w-2 h-2 rounded-full mr-2"></span><span id="statusText"></span>
+  </div>
+
+  <div class="relative my-2 flex justify-center items-center">
+   <svg viewBox="0 0 100 100" class="w-64 h-64 md:w-72 md:h-72 -rotate-90">
+    <circle cx="50" cy="50" r="44" class="stroke-tangerine-100" stroke-width="5" fill="none"/>
+    <circle id="progressCircle" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0" stroke-width="5" stroke-linecap="round" fill="none" class="stroke-tangerine-500"/>
+   </svg>
+   <div class="absolute inset-0 flex flex-col items-center justify-center">
+    <span id="timeDisplay" class="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-800 tabular-nums">30:00</span>
+    <span id="phaseSubtitle" class="text-sm font-medium text-slate-400 mt-2 px-8"></span>
+   </div>
+  </div>
+
+ </div>
+ <div class="tbtns">
+   <button id="flowStopBtn" onclick="stopFlowAndRest()" class="hidden w-full max-w-xs py-4 px-8 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition text-lg">■ Parar Flow & Descansar</button>
+   <button id="skipBtn" onclick="skipBreak()" class="hidden px-5 py-4 bg-leaf-500 hover:bg-leaf-600 text-white font-semibold rounded-2xl transition">⏭ Pular descanso</button>
+   <button id="resetBtn" onclick="resetTimer()" class="hidden px-5 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition" title="Voltar ao início">↩ Voltar</button>
+ </div>
+</div>
 <div id="focusScreen" class="ov hidden">
  <div id="focusWord">foco</div>
  <div id="focusTimer">00:00</div>
@@ -339,13 +357,13 @@ input[type=range]:disabled{opacity:.35}
   <h3>Como você quer focar?</h3>
   <p>Sua escolha vale para foco, flow e descanso desta rodada.</p>
   <button class="mbtn main" onclick="chooseMode(true)">🖤 Tela anti-distração</button>
-  <button class="mbtn alt" onclick="chooseMode(false)">⏱ Só o timer</button>
+  <button class="mbtn alt" onclick="chooseMode(false)">⏱ Timer</button>
   <button class="mbtn cancel" onclick="$('modeDialog').classList.add('hidden')">Cancelar</button>
  </div>
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='1.6';
+const APP_VERSION='1.7';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -602,6 +620,7 @@ function updateScreens(p){
  const inPrompt=p===PHASES.PROMPT, inEnd=p===PHASES.BREAKEND;
  // avisos piscantes valem nos dois modos; as telas pretas só no modo anti-distração
  $('focusScreen').classList.toggle('hidden',!(ad&&(inFocus||inFlow||inBreak)));
+ $('timerScreen').classList.toggle('hidden',!(!ad&&(inFocus||inFlow||inBreak)));   // modo Timer: tela cheia com o círculo
  $('promptScreen').classList.toggle('hidden',!inPrompt);
  $('endScreen').classList.toggle('hidden',!inEnd);
  $('focusWord').textContent=inFlow?'flow':inBreak?'descanso':'foco';
@@ -611,7 +630,7 @@ function updateScreens(p){
  if(inEnd){$('endScreen').classList.add('flashing');$('endSilence').classList.remove('hidden')}
  $('continuationPrompt').classList.add('hidden');
  setThemeColor('#000000');
- const full=ad&&(inFocus||inFlow||inBreak||inPrompt||inEnd);
+ const full=inFocus||inFlow||inBreak||inPrompt||inEnd;
  if(full){enterFullscreen();requestWake()}else{exitFullscreen();releaseWake()}
 }
 function focusScreenAction(){currentPhase===PHASES.FLOW?stopFlowAndRest():resetTimer()}
