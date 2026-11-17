@@ -172,12 +172,12 @@ input[type=range]:disabled{opacity:.35}
   <div class="flex items-center gap-3">
    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-tangerine-500 to-tangerine-400 flex items-center justify-center shadow-md shadow-tangerine-500/20 text-xl">🍊</div>
    <div>
-    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1><span class="ver" id="appVersion">v1.5</span></div>
+    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1></div>
     <p class="text-xs text-slate-500 font-medium">Foco, Flow & Descanso</p>
    </div>
   </div>
   <div class="flex items-center gap-2">
-   <button id="muteBtn" onclick="toggleMute()" class="w-9 h-9 rounded-full bg-tangerine-50 border border-tangerine-200 hover:bg-tangerine-100 transition" title="Som ligado/desligado" aria-label="Alternar som">🔊</button>
+<span class="ver" id="appVersion">v1.6</span>
    <div class="bg-tangerine-50 border border-tangerine-200 px-3 py-1.5 rounded-full text-xs font-semibold text-tangerine-800">⏱ Hoje: <span id="headerTotalTime">0m</span></div>
   </div>
  </div>
@@ -273,7 +273,6 @@ input[type=range]:disabled{opacity:.35}
      <span id="vibState" class="tstate">Ligado</span>
     </label>
    </div>
-   <button id="vibTest" onclick="testVibration()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-tangerine-100 hover:bg-tangerine-200 text-tangerine-800 transition mt-3">📳 Testar vibração</button>
   </div>
 
 
@@ -346,7 +345,7 @@ input[type=range]:disabled{opacity:.35}
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='1.5';
+const APP_VERSION='1.6';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -407,9 +406,7 @@ function cancelSounds(){
 }
 function testSound(kind){initAudio();cancelSounds();scheduleChime(kind,0)}
 function setMuted(m){muted=m;if(muted)cancelSounds();syncAudioUI();save()}
-function toggleMute(){setMuted(!muted)}
 function syncAudioUI(){
- $('muteBtn').textContent=muted?'🔇':'🔊';
  $('toggleSound').checked=!muted;
  const t=$('soundState');t.textContent=muted?'Desligado':'Ligado';t.classList.toggle('on',!muted);
  $('volume').disabled=muted;
@@ -425,7 +422,7 @@ function testVibration(){if(canVibrate)try{navigator.vibrate([250,120,250])}catc
 function syncVibUI(){
  const t=$('vibState');
  if(!canVibrate){$('toggleVibrate').checked=false;$('toggleVibrate').disabled=true;t.textContent='Indisponível';t.classList.remove('on');
-  $('vibHint').textContent='Este aparelho/navegador não permite vibrar (iPhone, por ex.)';$('vibTest').classList.add('hidden');return}
+  $('vibHint').textContent='Este aparelho/navegador não permite vibrar (iPhone, por ex.)';return}
  $('toggleVibrate').checked=vibrate;t.textContent=vibrate?'Ligado':'Desligado';t.classList.toggle('on',vibrate);
 }
 
