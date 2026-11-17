@@ -151,6 +151,19 @@ input.peer:checked + div::after{background-color:#000!important;border-color:#00
 .tstate{margin-left:10px;min-width:5.4em;font-size:.78rem;font-weight:800;color:#8b8b92;text-align:left}
 .tstate.on{color:#f97316}
 </style>
+<style id="gray">
+/* ===== v1.5: linhas e textos das telas anti-distração em cinza discreto ===== */
+:root{--dim:#4a4a50;--dim-line:#2a2a2e}
+.border-tangerine-100,.border-tangerine-200,.border-slate-100,.border-slate-200,#basketVisual{border-color:var(--dim)!important}
+.border-t,header.border-b,header{border-color:var(--dim-line)!important}
+.bg-slate-100,.bg-slate-800,.bg-tangerine-50\/60{border:1px solid var(--dim)!important}
+.pbtn.rest,.mcard,.mbtn.alt{border:1px solid var(--dim)!important}
+input.peer + div{box-shadow:0 0 0 1px var(--dim)}
+input.peer:checked + div{box-shadow:0 0 0 1px #f97316}
+#focusWord,#focusTimer{color:var(--dim)!important}
+#focusBtn{color:var(--dim)!important;border:1px solid var(--dim)!important;background:transparent}
+input[type=range]:disabled{opacity:.35}
+</style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
 
@@ -159,7 +172,7 @@ input.peer:checked + div::after{background-color:#000!important;border-color:#00
   <div class="flex items-center gap-3">
    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-tangerine-500 to-tangerine-400 flex items-center justify-center shadow-md shadow-tangerine-500/20 text-xl">🍊</div>
    <div>
-    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1><span class="ver" id="appVersion">v1.4</span></div>
+    <div class="verrow"><h1 class="text-xl font-bold bg-gradient-to-r from-tangerine-600 to-tangerine-800 bg-clip-text text-transparent">Tangerina</h1><span class="ver" id="appVersion">v1.5</span></div>
     <p class="text-xs text-slate-500 font-medium">Foco, Flow & Descanso</p>
    </div>
   </div>
@@ -237,12 +250,33 @@ input.peer:checked + div::after{background-color:#000!important;border-color:#00
   </div>
 
   <div class="mt-4 pt-4 border-t border-slate-100">
-   <div class="flex items-center justify-between mb-1">
+   <div class="flex items-center justify-between gap-3">
+    <div><span class="text-sm font-bold text-slate-800 block">Som do alarme</span>
+     <span class="text-xs text-slate-500 block">Liga ou desliga o som dos avisos</span></div>
+    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+     <input type="checkbox" id="toggleSound" class="sr-only peer">
+     <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tangerine-500"></div>
+     <span id="soundState" class="tstate">Ligado</span>
+    </label>
+   </div>
+   <div class="flex items-center justify-between mb-1 mt-4">
     <label for="volume" class="text-sm font-bold text-slate-800">Volume do alarme</label>
     <button onclick="testSound('break')" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-tangerine-100 hover:bg-tangerine-200 text-tangerine-800 transition">🔔 Testar som</button>
    </div>
    <input type="range" id="volume" min="0" max="100" value="70" class="w-full accent-orange-500">
+   <div class="flex items-center justify-between gap-3 mt-4">
+    <div><span class="text-sm font-bold text-slate-800 block">Vibrar</span>
+     <span id="vibHint" class="text-xs text-slate-500 block">Vibra junto com o alarme até você silenciar</span></div>
+    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+     <input type="checkbox" id="toggleVibrate" class="sr-only peer">
+     <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tangerine-500"></div>
+     <span id="vibState" class="tstate">Ligado</span>
+    </label>
+   </div>
+   <button id="vibTest" onclick="testVibration()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-tangerine-100 hover:bg-tangerine-200 text-tangerine-800 transition mt-3">📳 Testar vibração</button>
   </div>
+
+
 
   <div class="mt-4 p-3 bg-tangerine-50/60 rounded-xl text-xs text-tangerine-800 leading-relaxed">
    🧮 Sua proporção atual é de <strong id="ratioDisplay">3 para 1</strong>. Façamos um exemplo para entender isso melhor: Se você configurou 30 minutos de estudo para 10 minutos de descanso, a sua proporção é de 3 para 1 (ou seja, para cada 3 minutos estudados, você ganha 1 minuto de descanso); portanto, se o alarme de 30 minutos tocou e você decidiu continuar estudando por mais uns 30 minutos, seu tempo total de estudo foi de 60 minutos, fazendo com que o descanso não fique travado nos 10 minutos iniciais mas aumente proporcionalmente ao seu esforço. 30 min de foco + 30 min de flow = 60 min estudados → <strong id="ratioExample">20 min</strong> de descanso.
@@ -312,7 +346,7 @@ input.peer:checked + div::after{background-color:#000!important;border-color:#00
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='1.4';
+const APP_VERSION='1.5';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -321,15 +355,15 @@ let initialFocusSeconds=1800, defaultBreakSeconds=600;
 let phaseEndAt=0, flowStartAt=0, extraFlowSeconds=0;
 let calculatedBreakSeconds=0, totalFocusSecondsInSession=0;
 let sessionList=[], totalStudySecondsToday=0;
-let muted=false, volume=0.7;
+let muted=false, volume=0.7, vibrate=true;
 let antiDistraction=false;   // escolhido ao iniciar o foco; vale para toda a rodada
 
 // ---------- Persistência ----------
 const today=()=>new Date().toISOString().slice(0,10);
-function save(){try{localStorage.setItem(STORE,JSON.stringify({day:today(),sessionList,totalStudySecondsToday,muted,volume,
+function save(){try{localStorage.setItem(STORE,JSON.stringify({day:today(),sessionList,totalStudySecondsToday,muted,volume,vib:vibrate,
  focus:$('inputFocusTime').value,brk:$('inputBreakTime').value,prop:$('toggleProportionalBreak').checked}))}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(STORE)||'null');if(!d)return;
- muted=!!d.muted;volume=d.volume??0.7;
+ muted=!!d.muted;volume=d.volume??0.7;vibrate=d.vib!==false;
  if(d.focus)$('inputFocusTime').value=d.focus;if(d.brk)$('inputBreakTime').value=d.brk;
  $('toggleProportionalBreak').checked=d.prop!==false;
  if(d.day===today()){sessionList=d.sessionList||[];totalStudySecondsToday=d.totalStudySecondsToday||0}}catch(e){}}
@@ -372,11 +406,32 @@ function cancelSounds(){
  scheduled=[];
 }
 function testSound(kind){initAudio();cancelSounds();scheduleChime(kind,0)}
-function toggleMute(){muted=!muted;if(muted)cancelSounds();$('muteBtn').textContent=muted?'🔇':'🔊';save()}
+function setMuted(m){muted=m;if(muted)cancelSounds();syncAudioUI();save()}
+function toggleMute(){setMuted(!muted)}
+function syncAudioUI(){
+ $('muteBtn').textContent=muted?'🔇':'🔊';
+ $('toggleSound').checked=!muted;
+ const t=$('soundState');t.textContent=muted?'Desligado':'Ligado';t.classList.toggle('on',!muted);
+ $('volume').disabled=muted;
+}
+// ---------- VIBRAÇÃO ----------
+const canVibrate='vibrate' in navigator;
+function startVibration(){
+ if(!vibrate||!canVibrate)return;
+ try{const p=[];for(let i=0;i<60;i++)p.push(500,400);navigator.vibrate(p)}catch(e){}   // repete ~1 min ou até silenciar
+}
+function stopVibration(){try{canVibrate&&navigator.vibrate(0)}catch(e){}}
+function testVibration(){if(canVibrate)try{navigator.vibrate([250,120,250])}catch(e){}}
+function syncVibUI(){
+ const t=$('vibState');
+ if(!canVibrate){$('toggleVibrate').checked=false;$('toggleVibrate').disabled=true;t.textContent='Indisponível';t.classList.remove('on');
+  $('vibHint').textContent='Este aparelho/navegador não permite vibrar (iPhone, por ex.)';$('vibTest').classList.add('hidden');return}
+ $('toggleVibrate').checked=vibrate;t.textContent=vibrate?'Ligado':'Desligado';t.classList.toggle('on',vibrate);
+}
 
 function notify(title,body){
  try{if('Notification' in window&&Notification.permission==='granted')new Notification(title,{body})}catch(e){}
- try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}
+ startVibration();
 }
 function ensureSoundAtEnd(kind){
  if(muted)return;
@@ -491,7 +546,7 @@ function finishBreak(){
  $('phaseSubtitle').textContent='Pronto para a próxima tangerina?';
 }
 function showAlarm(){if(!muted&&volume>0&&scheduled.length)$('alarmBox').classList.remove('hidden')}
-function dismissAlarm(){cancelSounds();$('alarmBox').classList.add('hidden');['promptScreen','endScreen'].forEach(i=>$(i).classList.remove('flashing'));['promptSilence','endSilence'].forEach(i=>$(i).classList.add('hidden'))}
+function dismissAlarm(){cancelSounds();stopVibration();$('alarmBox').classList.add('hidden');['promptScreen','endScreen'].forEach(i=>$(i).classList.remove('flashing'));['promptSilence','endSilence'].forEach(i=>$(i).classList.add('hidden'))}
 function skipBreak(){
  cancelSounds();
  if(currentPhase===PHASES.BREAK){
@@ -638,7 +693,9 @@ function clearHistory(){
 window.addEventListener('DOMContentLoaded',()=>{
  load();
  $('volume').value=Math.round(volume*100);
- $('muteBtn').textContent=muted?'🔇':'🔊';
+ syncAudioUI();syncVibUI();
+ $('toggleSound').addEventListener('change',e=>setMuted(!e.target.checked));
+ $('toggleVibrate').addEventListener('change',e=>{vibrate=e.target.checked;syncVibUI();if(vibrate)testVibration();save()});
  ['inputFocusTime','inputBreakTime','toggleProportionalBreak'].forEach(id=>$(id).addEventListener('change',onSettingsChange));
  $('volume').addEventListener('input',e=>{volume=e.target.value/100;save()});
  onSettingsChange();renderAll();setPhaseUI(PHASES.SETUP);
