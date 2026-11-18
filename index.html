@@ -193,6 +193,10 @@ input[type=range]:disabled{opacity:.35}
 .ratiocard strong{color:#fdba74}
 .ratiocard .mbtn{position:sticky;bottom:0}
 </style>
+<style id="v19">
+/* ===== v1.9 ===== */
+#flowStopBtn,#skipBtn{color:#f1f1f3!important}   /* mesma cor dos números do timer */
+</style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
 
@@ -206,7 +210,7 @@ input[type=range]:disabled{opacity:.35}
    </div>
   </div>
   <div class="flex items-center gap-2">
-<span class="ver" id="appVersion">v1.8</span>
+<span class="ver" id="appVersion">v1.9</span>
    <div class="bg-tangerine-50 border border-tangerine-200 px-3 py-1.5 rounded-full text-xs font-semibold text-tangerine-800">⏱ Hoje: <span id="headerTotalTime">0m</span></div>
   </div>
  </div>
@@ -345,7 +349,6 @@ input[type=range]:disabled{opacity:.35}
  <div class="tbtns">
    <button id="flowStopBtn" onclick="stopFlowAndRest()" class="hidden pbtn rest">■ Parar Flow & Descansar</button>
    <button id="skipBtn" onclick="skipBreak()" class="hidden pbtn rest">⏭ Pular descanso</button>
-   <button id="resetBtn" onclick="resetTimer()" class="hidden pbtn rest">🏠 Voltar ao início</button>
  </div>
 </div>
 <div id="focusScreen" class="ov hidden">
@@ -383,14 +386,14 @@ input[type=range]:disabled{opacity:.35}
  <div class="mcard">
   <h3>Como você quer focar?</h3>
   <p>Sua escolha vale para foco, flow e descanso desta rodada.</p>
-  <button class="mbtn main" onclick="chooseMode(true)">🖤 Tela anti-distração</button>
-  <button class="mbtn alt" onclick="chooseMode(false)">⏱ Timer</button>
+  <button class="mbtn main" onclick="chooseMode(true)">Tela anti-distração</button>
+  <button class="mbtn main" onclick="chooseMode(false)">Timer</button>
   <button class="mbtn cancel" onclick="$('modeDialog').classList.add('hidden')">Cancelar</button>
  </div>
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='1.8';
+const APP_VERSION='1.9';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -634,7 +637,6 @@ function setPhaseUI(p){
  $('startBtn').classList.toggle('hidden',p!==PHASES.SETUP);
  $('flowStopBtn').classList.toggle('hidden',p!==PHASES.FLOW);
  $('skipBtn').classList.toggle('hidden',p!==PHASES.BREAK);
- $('resetBtn').classList.toggle('hidden',p!==PHASES.FOCUS&&p!==PHASES.FLOW&&p!==PHASES.BREAK);
  updateScreens(p);
  $('settingsPanel').classList.toggle('opacity-50',p!==PHASES.SETUP);
  $('settingsPanel').classList.toggle('pointer-events-none',p!==PHASES.SETUP);
@@ -660,7 +662,11 @@ function updateScreens(p){
  const full=inFocus||inFlow||inBreak||inPrompt||inEnd;
  if(full){enterFullscreen();requestWake()}else{exitFullscreen();releaseWake()}
 }
-function focusScreenAction(){currentPhase===PHASES.FLOW?stopFlowAndRest():resetTimer()}
+function focusScreenAction(){
+ if(currentPhase===PHASES.FLOW)stopFlowAndRest();
+ else if(currentPhase===PHASES.BREAK)skipBreak();   // pular descanso -> tela "Bora colher mais uma?" / "Voltar ao início"
+ else resetTimer();
+}
 function setThemeColor(c){const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c)}
 function isInstalledApp(){
  try{return ['fullscreen','standalone'].some(m=>matchMedia('(display-mode: '+m+')').matches)||navigator.standalone===true}catch(e){return false}
