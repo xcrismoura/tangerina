@@ -1,4 +1,4 @@
-const C = "tangerina-v2.1";
+const C = "tangerina-v2.2";
 const A = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll(A))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
@@ -6,7 +6,8 @@ self.addEventListener("activate", e => {
   self.clients.claim();
 });
 self.addEventListener("fetch", e => {
-  e.respondWith(fetch(e.request).then(r => {
+  const same=new URL(e.request.url).origin===location.origin;
+  e.respondWith(fetch(e.request,same?{cache:"no-cache"}:undefined).then(r => {
     const copy = r.clone();
     caches.open(C).then(c => c.put(e.request, copy)).catch(() => {});
     return r;
