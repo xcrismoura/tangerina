@@ -210,7 +210,7 @@ input[type=range]:disabled{opacity:.35}
    </div>
   </div>
   <div class="flex items-center gap-2">
-<span class="ver" id="appVersion">v2.2</span>
+<span class="ver" id="appVersion">v2.3</span>
    <div class="bg-tangerine-50 border border-tangerine-200 px-3 py-1.5 rounded-full text-xs font-semibold text-tangerine-800">⏱ Hoje: <span id="headerTotalTime">0m</span></div>
   </div>
  </div>
@@ -292,6 +292,7 @@ input[type=range]:disabled{opacity:.35}
      <span id="vibState" class="tstate">Ligado</span>
     </label>
    </div>
+   <p id="vibNote" class="text-xs text-slate-500" style="margin-top:8px">⚠️ Se não vibrar, desative a economia de bateria do Android. No iPhone (Safari) a vibração não é compatível.</p>
   </div>
 
 
@@ -394,7 +395,7 @@ input[type=range]:disabled{opacity:.35}
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='2.2';
+const APP_VERSION='2.3';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -465,7 +466,8 @@ const canVibrate='vibrate' in navigator;
 let vibTimer=null, alarmRinging=false;
 const VIB_HINT_OK='Vibra quando o tempo acabar, até você tocar em um botão da tela de aviso';
 const VIB_HINT_BLOCKED='⚠️ O navegador não deixou vibrar. Confira no Android: Configurações → Som e vibração → ative a vibração/feedback tátil (e desative a economia de bateria).';
-// Pulso simples (um número só) repetido a cada 1 s, sem limite, até o alarme ser desativado.
+// Vibração SUAVE (biblioteca): dois toques curtos de 120 ms, repetidos a cada 2,5 s até o alarme ser desativado.
+// (A API só controla duração e pausas, não a força; pulsos curtos dão a sensação mais leve.)
 // O Chrome só vibra depois que você toca na página; o retorno "false" indica bloqueio.
 function vibOnce(ms){
  try{
@@ -477,10 +479,11 @@ function vibOnce(ms){
 function startVibration(){
  if(!vibrate||!canVibrate)return;
  clearInterval(vibTimer);
- vibOnce(900);vibTimer=setInterval(()=>vibOnce(900),1000);
+ const soft=[120,120,120];
+ vibOnce(soft);vibTimer=setInterval(()=>vibOnce(soft),2500);
 }
 function stopVibration(){clearInterval(vibTimer);vibTimer=null;try{canVibrate&&navigator.vibrate(0)}catch(e){}}
-function testVibration(){if(canVibrate)vibOnce(400)}
+function testVibration(){if(canVibrate)vibOnce(150)}
 function syncVibUI(){
  const t=$('vibState');
  if(!canVibrate){$('toggleVibrate').checked=false;$('toggleVibrate').disabled=true;t.textContent='Indisponível';t.classList.remove('on');
