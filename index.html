@@ -210,7 +210,7 @@ input[type=range]:disabled{opacity:.35}
    </div>
   </div>
   <div class="flex items-center gap-2">
-<span class="ver" id="appVersion">v2.0</span>
+<span class="ver" id="appVersion">v2.1</span>
    <div class="bg-tangerine-50 border border-tangerine-200 px-3 py-1.5 rounded-full text-xs font-semibold text-tangerine-800">⏱ Hoje: <span id="headerTotalTime">0m</span></div>
   </div>
  </div>
@@ -271,7 +271,7 @@ input[type=range]:disabled{opacity:.35}
   <div class="mt-4 pt-4 border-t border-slate-100">
    <div class="flex items-center justify-between gap-3">
     <div><span class="text-sm font-bold text-slate-800 block">Som do alarme</span>
-     <span class="text-xs text-slate-500 block">Liga ou desliga o som dos avisos</span></div>
+     <span class="text-xs text-slate-500 block">Toca quando o tempo acabar (independente da vibração)</span></div>
     <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
      <input type="checkbox" id="toggleSound" class="sr-only peer">
      <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tangerine-500"></div>
@@ -285,7 +285,7 @@ input[type=range]:disabled{opacity:.35}
    <input type="range" id="volume" min="0" max="100" value="70" class="w-full accent-orange-500">
    <div class="flex items-center justify-between gap-3 mt-4">
     <div><span class="text-sm font-bold text-slate-800 block">Vibrar</span>
-     <span id="vibHint" class="text-xs text-slate-500 block">Vibra junto com o alarme até você silenciar</span></div>
+     <span id="vibHint" class="text-xs text-slate-500 block">Vibra quando o tempo acabar, até você tocar em um botão da tela de aviso</span></div>
     <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
      <input type="checkbox" id="toggleVibrate" class="sr-only peer">
      <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tangerine-500"></div>
@@ -394,7 +394,7 @@ input[type=range]:disabled{opacity:.35}
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='2.0';
+const APP_VERSION='2.1';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -462,11 +462,16 @@ function syncAudioUI(){
 }
 // ---------- VIBRAÇÃO ----------
 const canVibrate='vibrate' in navigator;
+let vibTimer=null, alarmRinging=false;
+// Obs.: o Chrome recusa padrões de vibração com mais de ~99 itens (e a vibração não tocava). Por isso
+// repetimos um pulso curto a cada 1 s, sem limite de tempo, até o alarme ser desativado.
 function startVibration(){
  if(!vibrate||!canVibrate)return;
- try{const p=[];for(let i=0;i<60;i++)p.push(500,400);navigator.vibrate(p)}catch(e){}   // repete ~1 min ou até silenciar
+ clearInterval(vibTimer);
+ const buzz=()=>{try{navigator.vibrate([600,400])}catch(e){}};
+ buzz();vibTimer=setInterval(buzz,1000);
 }
-function stopVibration(){try{canVibrate&&navigator.vibrate(0)}catch(e){}}
+function stopVibration(){clearInterval(vibTimer);vibTimer=null;try{canVibrate&&navigator.vibrate(0)}catch(e){}}
 function testVibration(){if(canVibrate)try{navigator.vibrate([250,120,250])}catch(e){}}
 function syncVibUI(){
  const t=$('vibState');
@@ -477,7 +482,7 @@ function syncVibUI(){
 
 function notify(title,body){
  try{if('Notification' in window&&Notification.permission==='granted')new Notification(title,{body})}catch(e){}
- startVibration();
+ alarmRinging=true;startVibration();      // vibração independe do som
 }
 function ensureSoundAtEnd(kind){
  if(muted)return;
@@ -485,7 +490,7 @@ function ensureSoundAtEnd(kind){
   try{audioCtx&&audioCtx.resume().then(()=>scheduleChime(kind,0,true))}catch(e){}
  }
 }
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){initAudio();tick()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){initAudio();tick();if(alarmRinging)startVibration()}});
 
 // ---------- CONFIGURAÇÕES ----------
 function updateToggleState(){
@@ -592,7 +597,7 @@ function finishBreak(){
  $('phaseSubtitle').textContent='Pronto para a próxima tangerina?';
 }
 function showAlarm(){if(!muted&&volume>0&&scheduled.length)$('alarmBox').classList.remove('hidden')}
-function dismissAlarm(){cancelSounds();stopVibration();$('alarmBox').classList.add('hidden');['promptScreen','endScreen'].forEach(i=>$(i).classList.remove('flashing'));['promptSilence','endSilence'].forEach(i=>$(i).classList.add('hidden'))}
+function dismissAlarm(){alarmRinging=false;cancelSounds();stopVibration();$('alarmBox').classList.add('hidden');['promptScreen','endScreen'].forEach(i=>$(i).classList.remove('flashing'));['promptSilence','endSilence'].forEach(i=>$(i).classList.add('hidden'))}
 function skipBreak(){
  cancelSounds();
  if(currentPhase===PHASES.BREAK){
