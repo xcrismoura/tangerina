@@ -195,7 +195,7 @@ input[type=range]:disabled{opacity:.35}
 </style>
 <style id="v19">
 /* ===== v1.9 ===== */
-#flowStopBtn,#skipBtn{color:#f1f1f3!important}   /* mesma cor dos números do timer */
+#flowStopBtn,#skipBtn,#resetBtn{color:#f1f1f3!important}   /* mesma cor dos números do timer */
 </style>
 </head>
 <body class="bg-pattern text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-tangerine-200">
@@ -210,7 +210,7 @@ input[type=range]:disabled{opacity:.35}
    </div>
   </div>
   <div class="flex items-center gap-2">
-<span class="ver" id="appVersion">v1.9</span>
+<span class="ver" id="appVersion">v2.0</span>
    <div class="bg-tangerine-50 border border-tangerine-200 px-3 py-1.5 rounded-full text-xs font-semibold text-tangerine-800">⏱ Hoje: <span id="headerTotalTime">0m</span></div>
   </div>
  </div>
@@ -347,6 +347,7 @@ input[type=range]:disabled{opacity:.35}
 
  </div>
  <div class="tbtns">
+   <button id="resetBtn" onclick="resetTimer()" class="hidden pbtn rest">🏠 Voltar ao início</button>
    <button id="flowStopBtn" onclick="stopFlowAndRest()" class="hidden pbtn rest">■ Parar Flow & Descansar</button>
    <button id="skipBtn" onclick="skipBreak()" class="hidden pbtn rest">⏭ Pular descanso</button>
  </div>
@@ -393,7 +394,7 @@ input[type=range]:disabled{opacity:.35}
 </div>
 <script>
 const PHASES={SETUP:'setup',FOCUS:'focus',PROMPT:'prompt',FLOW:'flow',BREAK:'break',BREAKEND:'breakend'};
-const APP_VERSION='1.9';
+const APP_VERSION='2.0';
 const $=id=>document.getElementById(id);
 const STORE='tangerina:v2';
 
@@ -635,6 +636,7 @@ function setPhaseUI(p){
  $('progressCircle').setAttribute('class',u.c+(p===PHASES.FLOW?'':' transition-all duration-300'));
  if(p===PHASES.FLOW)setProgress(1);
  $('startBtn').classList.toggle('hidden',p!==PHASES.SETUP);
+ $('resetBtn').classList.toggle('hidden',p!==PHASES.FOCUS);
  $('flowStopBtn').classList.toggle('hidden',p!==PHASES.FLOW);
  $('skipBtn').classList.toggle('hidden',p!==PHASES.BREAK);
  updateScreens(p);

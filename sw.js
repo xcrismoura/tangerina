@@ -1,4 +1,4 @@
-const C = "tangerina-v1.9";
+const C = "tangerina-v2.0";
 const A = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll(A))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
